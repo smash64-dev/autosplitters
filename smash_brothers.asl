@@ -45,7 +45,7 @@ init {
         new MemoryWatcher<int>(new IntPtr(vars.GetEmuOffset(0x130D84))) { Name = "playerList" },
     };
 
-    vars.healthOffset = 0x2C;
+    vars.masterHandPort = 0;
     vars.masterHandReady = false;
     vars.playerSize = 0x0B50;
     vars.playerState = new MemoryWatcherList();
@@ -54,6 +54,7 @@ init {
 start {
     // 17 == 1P Character Select Screen
     if (vars.gameState["currentScene"].Current == 17 && vars.gameState["isLoading"].Current == 1) {
+        vars.masterHandPort = 0;
         vars.masterHandReady = false;
         return true;
     }
@@ -62,6 +63,7 @@ start {
 reset {
     // 8 == 1P Game Mode Menu
     if (vars.gameState["currentScene"].Current == 8) {
+        vars.masterHandPort = 0;
         vars.masterHandReady = false;
         return true;
     }
@@ -74,7 +76,8 @@ split {
 
     // handle master hand last hit
     if (vars.masterHandReady) {
-        if (vars.gameState["stage"].Current == 13 && vars.playerState["player2Health"].Current >= 300) {
+        if (vars.gameState["stage"].Current == 13 && vars.playerState["p" + vars.masterHandPort + "Health"].Current >= 300) {
+            vars.masterHandReady = false;
             return true;
         }
     }
@@ -90,18 +93,29 @@ update {
         vars.playerState = new MemoryWatcherList();
 
         for (var i = 0; i < 4; i++) {
-            var offset = (vars.playerSize*i) + vars.healthOffset;
-            vars.playerState.Add(new MemoryWatcher<int>(new IntPtr(vars.GetEmuPtr(0x130D84) + offset)) { Name = "player" + (i+1) + "Health" });
+            var character = (vars.playerSize*i) + 0x08;
+            var health = (vars.playerSize*i) + 0x2C;
+
+            vars.playerState.Add(new MemoryWatcher<int>(new IntPtr(vars.GetEmuPtr(0x130D84) + character)) { Name = "p" + (i+1) + "Character" });
+            vars.playerState.Add(new MemoryWatcher<int>(new IntPtr(vars.GetEmuPtr(0x130D84) + health)) { Name = "p" + (i+1) + "Health" });
         }
     } else {
         // detect the start of the master hand fight
         if (vars.gameState["stage"].Current == 13 && vars.gameState["currentScene"].Current == 1) {
-            if (!vars.masterHandReady && vars.playerState["player2Health"].Current == 0) {
-                vars.masterHandReady = true;
+            if (!vars.masterHandReady) {
+                for (var i = 1; i < 5; i++) {
+                    if (vars.playerState["p" + i + "Character"].Current == 12) {
+                        vars.masterHandPort = i;
+                    }
+                }
+
+                if (vars.masterHandPort > 0 && vars.playerState["p" + vars.masterHandPort + "Health"].Current == 0) {
+                    vars.masterHandReady = true;
+                }
             }
 
             // TODO: this should work, but there's probably a better way to do this
-            if (vars.masterHandReady && vars.playerState["player2Health"].Current >= 350) {
+            if (vars.masterHandReady && vars.playerState["p" + vars.masterHandPort + "Health"].Current >= 350) {
                 vars.masterHandReady = false;
             }
         }
