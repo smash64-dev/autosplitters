@@ -28,7 +28,7 @@ startup {
 
     vars.playerOffsets = new Dictionary<string, int>() {
         { "character",  0x08 },
-        { "health",     0x2C },
+        { "damage",     0x2C },
     };
 
     vars.regionOffsets = new Dictionary<string, Dictionary<string, int>>() {
@@ -140,7 +140,7 @@ split {
 
     // handle master hand last hit
     if (vars.bossReady) {
-        if (vars.romState["stage"].Current == vars.finalStage && vars.playerState[vars.bossPort]["health"].Current >= vars.finalDamage) {
+        if (vars.romState["stage"].Current == vars.finalStage && vars.playerState[vars.bossPort]["damage"].Current >= vars.finalDamage) {
             return true;
         }
     }
@@ -182,13 +182,13 @@ update {
                     }
                 }
 
-                if (vars.bossPort >= 0 && vars.playerState[vars.bossPort]["health"].Current == 0) {
+                if (vars.bossPort >= 0 && vars.playerState[vars.bossPort]["damage"].Current == 0) {
                     vars.bossReady = true;
                 }
             }
 
             // TODO: this should work, but there's probably a better way to do this
-            if (vars.bossReady && vars.playerState[vars.bossPort]["health"].Current >= vars.finalDamage + 50) {
+            if (vars.bossReady && vars.playerState[vars.bossPort]["damage"].Current >= vars.finalDamage + 50) {
                 vars.bossReady = false;
             }
         }
