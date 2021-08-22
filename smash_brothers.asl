@@ -20,35 +20,29 @@ startup {
     // constants
     vars.characterSelect = 0x11;
     vars.gameMenu1p = 0x08;
+    vars.gameSet = 0x06;
+    vars.gameStart = 0x01;
     vars.finalBoss = 0xC;
-    vars.finalDamage = 300;
     vars.finalStage = 0xD;
-    vars.maxPorts = 4;
-    vars.playerSize = 0x0B50;
-
-    vars.playerOffsets = new Dictionary<string, int>() {
-        { "character",  0x08 },
-        { "damage",     0x2C },
-    };
 
     vars.regionOffsets = new Dictionary<string, Dictionary<string, int>>() {
         // Japan
         { "67D20729-F696774C", new Dictionary<string, int>() {
-            { "currentScene",   0xA2A93 },
-            { "isLoading",      0x136B9C },
             { "lastScene",      0xA2A92 },
-            { "playerList",     0x12E914 },
-            { "score",          0xA2AB0 },
-            { "stage",          0xA2AA4 },
+            { "currentScene",   0xA2A93 },  // + 0x01
+            { "stage",          0xA2AA4 },  // + 0x12
+            { "score",          0xA2AB0 },  // + 0x1E
+            { "matchState",     0xA2AEA },  // + 0x58
+            { "isLoading",      0x136B9C },
         } },
         // North America
         { "916B8B5B-780B85A4", new Dictionary<string, int>() {
-            { "currentScene",   0xA4AD3 },
-            { "isLoading",      0x138F9C },
             { "lastScene",      0xA4AD2 },
-            { "playerList",     0x130D84 },
-            { "score",          0xA4AF0 },
-            { "stage",          0xA4AE4 },
+            { "currentScene",   0xA4AD3 },  // + 0x01
+            { "stage",          0xA4AE4 },  // + 0x12
+            { "score",          0xA4AF0 },  // + 0x1E
+            { "matchState",     0xA4B2A },  // + 0x58
+            { "isLoading",      0x138F9C },
         } },
     };
 }
@@ -61,24 +55,6 @@ init {
     vars.GetEmuPtr = (Func<int, int>)((offset) => {
         uint emuPtr = memory.ReadValue<uint>(new IntPtr(current.emuBase) + offset);
         return vars.GetEmuOffset( (int)(emuPtr - 0x80000000) );
-    });
-
-    vars.GetPlayerState = (Func<uint, uint, int, MemoryWatcherList>)((crc1, crc2, port) => {
-        var crcStr = vars.GetRegionName(crc1, crc2);
-        if (vars.regionOffsets.ContainsKey(crcStr)) {
-            var playerList = vars.regionOffsets[crcStr]["playerList"];
-
-            var watcherList = new MemoryWatcherList();
-            foreach(KeyValuePair<string, int> item in vars.playerOffsets) {
-                // everything we need is an int, for now; you may need to refactor this later
-                var offset = (vars.playerSize * port) + item.Value;
-                watcherList.Add(new MemoryWatcher<int>(new IntPtr(vars.GetEmuPtr(playerList) + offset)) { Name = item.Key });
-            }
-
-            return watcherList;
-        } else {
-            return new MemoryWatcherList();
-        }
     });
 
     vars.GetRegionName = (Func<uint, uint, string>)((crc1, crc2) => {
@@ -94,14 +70,15 @@ init {
             var offsets = vars.regionOffsets[crcStr];
 
             return new MemoryWatcherList() {
-                // menu addresses; TODO: figure out what isLoading actually is
+                // menu addresses
+                // TODO: figure out what isLoading actually is
                 new MemoryWatcher<byte>(new IntPtr(vars.GetEmuOffset(offsets["currentScene"]))) { Name = "currentScene" },
                 new MemoryWatcher<byte>(new IntPtr(vars.GetEmuOffset(offsets["isLoading"]))) { Name = "isLoading" },
                 new MemoryWatcher<byte>(new IntPtr(vars.GetEmuOffset(offsets["lastScene"]))) { Name = "lastScene" },
 
                 // 1p mode addresses
+                new MemoryWatcher<byte>(new IntPtr(vars.GetEmuOffset(offsets["matchState"]))) { Name = "matchState" },
                 new MemoryWatcher<byte>(new IntPtr(vars.GetEmuOffset(offsets["stage"]))) { Name = "stage" },
-                new MemoryWatcher<int>(new IntPtr(vars.GetEmuOffset(offsets["playerList"]))) { Name = "playerList" },
                 new MemoryWatcher<int>(new IntPtr(vars.GetEmuOffset(offsets["score"]))) { Name = "score" },
             };
         } else {
@@ -111,7 +88,6 @@ init {
 
     vars.bossPort = -1;
     vars.bossReady = false;
-    vars.playerState = new List<MemoryWatcherList>(vars.maxPorts);
     vars.ready = false;
     vars.romState = new MemoryWatcherList();
 }
@@ -140,7 +116,7 @@ split {
 
     // handle master hand last hit
     if (vars.bossReady) {
-        if (vars.romState["stage"].Current == vars.finalStage && vars.playerState[vars.bossPort]["damage"].Current >= vars.finalDamage) {
+        if (vars.romState["stage"].Current == vars.finalStage && vars.romState["matchState"].Current == vars.gameSet) {
             return true;
         }
     }
@@ -156,41 +132,11 @@ update {
     if (vars.romState.Count == 0) {
         return false;
     }
-
     vars.romState.UpdateAll(game);
-    for (var port = 0; port < vars.playerState.Count; port++) {
-        if (vars.playerState[port] is MemoryWatcherList) {
-            vars.playerState[port].UpdateAll(game);
-        }
-    }
 
-    // a new stage has loaded and player structs are in a different location, update
-    if (vars.romState["playerList"].Current != vars.romState["playerList"].Old) {
-        vars.bossReady = false;
-        vars.playerState = new List<MemoryWatcherList>(vars.maxPorts);
-
-        for (var port = 0; port < vars.maxPorts; port++) {
-            vars.playerState.Insert(port, vars.GetPlayerState(current.crc1, current.crc2, port));
-        }
-    } else {
-        // detect the start of the master hand fight
-        if (vars.romState["stage"].Current == vars.finalStage && vars.romState["currentScene"].Current == 1) {
-            if (!vars.bossReady) {
-                for (var port = 0; port < vars.playerState.Count; port++) {
-                    if (vars.playerState[port]["character"].Current == vars.finalBoss) {
-                        vars.bossPort = port;
-                    }
-                }
-
-                if (vars.bossPort >= 0 && vars.playerState[vars.bossPort]["damage"].Current == 0) {
-                    vars.bossReady = true;
-                }
-            }
-
-            // TODO: this should work, but there's probably a better way to do this
-            if (vars.bossReady && vars.playerState[vars.bossPort]["damage"].Current >= vars.finalDamage + 50) {
-                vars.bossReady = false;
-            }
+    if (vars.romState["stage"].Current == vars.finalStage) {
+        if (!vars.bossReady && vars.romState["matchState"].Current == vars.gameStart) {
+            vars.bossReady = true;
         }
     }
 }
