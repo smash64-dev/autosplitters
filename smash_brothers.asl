@@ -11,21 +11,22 @@ state("Project64KVE") {
 }
 
 startup {
-    settings.Add("forceAusRom", false, "Force AUS ROM");
-    settings.SetToolTip("forceAusRom", "Check this if you're use a ROM hack based on the AUS ROM");
+    settings.Add("forceAusRom", false, "Force Australia ROM");
+    settings.SetToolTip("forceAusRom", "Check this if you're using a ROM hack based on the Australia ROM");
 
-    settings.Add("forceEuRom", false, "Force EU ROM");
-    settings.SetToolTip("forceEuRom", "Check this if you're use a ROM hack based on the EU ROM");
+    settings.Add("forceEuRom", false, "Force Europe ROM");
+    settings.SetToolTip("forceEuRom", "Check this if you're using a ROM hack based on the Europe ROM");
 
-    settings.Add("forceJpRom", false, "Force JP ROM");
-    settings.SetToolTip("forceJpRom", "Check this if you're use a ROM hack based on the JP ROM");
+    settings.Add("forceJpRom", false, "Force Japan ROM");
+    settings.SetToolTip("forceJpRom", "Check this if you're using a ROM hack based on the Japan ROM");
 
-    settings.Add("forceNaRom", false, "Force NA ROM");
-    settings.SetToolTip("forceNaRom", "Check this if you're use a ROM hack based on the NA ROM");
+    settings.Add("forceNaRom", false, "Force North America ROM");
+    settings.SetToolTip("forceNaRom", "Check this if you're using a ROM hack based on the North America ROM");
 
     vars.regionData = new Dictionary<string, Dictionary<string, int>>() {
         // Australia
         { "DD26FDA1-CB4A6BE3", new Dictionary<string, int>() {
+            // offsets
             { "lastScene",      0xA5212 },
             { "currentScene",   0xA5213 },  // + 0x01
             { "stage",          0xA5224 },  // + 0x12
@@ -45,6 +46,7 @@ startup {
         } },
         // Europe
         { "93945F48-5C0F2E30", new Dictionary<string, int>() {
+            // offsets
             { "lastScene",      0xAD332 },
             { "currentScene",   0xAD333 },  // + 0x01
             { "stage",          0xAD344 },  // + 0x12
@@ -64,6 +66,7 @@ startup {
         } },
         // Japan
         { "67D20729-F696774C", new Dictionary<string, int>() {
+            // offsets
             { "lastScene",      0xA2A92 },
             { "currentScene",   0xA2A93 },  // + 0x01
             { "stage",          0xA2AA4 },  // + 0x12
@@ -83,6 +86,7 @@ startup {
         } },
         // North America
         { "916B8B5B-780B85A4", new Dictionary<string, int>() {
+            // offsets
             { "lastScene",      0xA4AD2 },
             { "currentScene",   0xA4AD3 },  // + 0x01
             { "stage",          0xA4AE4 },  // + 0x12
@@ -135,7 +139,6 @@ init {
             obj.gameMenu1p = constants["gameMenu1p"];
             obj.gameSet = constants["gameSet"];
             obj.gameStart = constants["gameStart"];
-
             return obj;
         } else {
             return new ExpandoObject();
@@ -164,25 +167,25 @@ init {
         }
     });
 
-    vars.bossPort = -1;
     vars.bossReady = false;
+    vars.debug = true;
     vars.ready = false;
     vars.romConst = new ExpandoObject();
     vars.romState = new MemoryWatcherList();
 }
 
 start {
-    vars.bossPort = -1;
     vars.bossReady = false;
 
     if (vars.romState["currentScene"].Current == vars.romConst.charSelect && vars.romState["isLoading"].Current == 1) {
+        if (vars.debug) print("smash_brothers: starting");
         return true;
     }
 }
 
 reset {
     if (vars.romState["currentScene"].Current == vars.romConst.gameMenu1p) {
-        vars.bossPort = -1;
+        if (vars.debug) print("smash_brothers: resetting");
         vars.bossReady = false;
         return true;
     }
@@ -190,12 +193,14 @@ reset {
 
 split {
     if (vars.romState["stage"].Current > vars.romState["stage"].Old) {
+        if (vars.debug) print("smash_brothers: splitting (stage change)");
         return true;
     }
 
     // handle boss last hit
     if (vars.bossReady) {
         if (vars.romState["stage"].Current == vars.romConst.finalStage && vars.romState["matchState"].Current == vars.romConst.gameSet) {
+            if (vars.debug) print("smash_brothers: splitting (last hit)");
             return true;
         }
     }
@@ -206,6 +211,11 @@ update {
     if (current.crc1 != old.crc1 || current.crc2 != old.crc2 || !vars.ready) {
         vars.romConst = vars.GetRomConstants(current.crc1, current.crc2);
         vars.romState = vars.GetRomState(current.crc1, current.crc2);
+
+        if (vars.debug) {
+            var crcStr = vars.GetRegionName(current.crc1, current.crc2);
+            print("smash_brothers: crc detected (" + crcStr + ") is " + (vars.romState.Count == 0 ? "invalid" : "valid"));
+        }
         vars.ready = true;
     }
 
@@ -215,7 +225,8 @@ update {
 
     vars.romState.UpdateAll(game);
     if (vars.romState["stage"].Current == vars.romConst.finalStage) {
-        if (!vars.bossReady && vars.romState["matchState"].Current == vars.rom.Const.gameStart) {
+        if (!vars.bossReady && vars.romState["matchState"].Current == vars.romConst.gameStart) {
+            if (vars.debug) print("smash_brothers: final boss is ready");
             vars.bossReady = true;
         }
     }
