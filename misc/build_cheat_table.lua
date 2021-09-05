@@ -18,7 +18,10 @@ REGIONS = {
         ["stage"]        = { 0xA5224 },
         ["score"]        = { 0xA5230, vtDword },
         ["matchState"]   = { 0xA526A },
+        ["targets"]      = { 0x131C0F },
+        ["platforms"]    = { 0x131C13 },
         ["isLoading"]    = { 0x1397BC },
+        ["bonusState"]   = { 0x18FCB2 },
     },
     -- "93945F48-5C0F2E30"
     ["europe"] = {
@@ -27,7 +30,10 @@ REGIONS = {
         ["stage"]        = { 0xAD344 },
         ["score"]        = { 0xAD350, vtDword },
         ["matchState"]   = { 0xAD38A },
+        ["targets"]      = { 0x13A0EF },
+        ["platforms"]    = { 0x13A0F3 },
         ["isLoading"]    = { 0x141C9C },
+        ["bonusState"]   = { 0x197F22 },
     },
     -- "67D20729-F696774C"
     ["japan"] = {
@@ -36,7 +42,10 @@ REGIONS = {
         ["stage"]        = { 0xA2AA4 },
         ["score"]        = { 0xA2AB0, vtDword },
         ["matchState"]   = { 0xA2AEA },
+        ["targets"]      = { 0x12EF8F },
+        ["platforms"]    = { 0x12EF93 },
         ["isLoading"]    = { 0x136B9C },
+        ["bonusState"]   = { 0x18CA82 },
     },
     -- "916B8B5B-780B85A4"
     ["north america"] = {
@@ -45,7 +54,10 @@ REGIONS = {
         ["stage"]        = { 0xA4AE4 },
         ["score"]        = { 0xA4AF0, vtDword },
         ["matchState"]   = { 0xA4B2A },
+        ["targets"]      = { 0x1313FF },
+        ["platforms"]    = { 0x131403 },
         ["isLoading"]    = { 0x138F9C },
+        ["bonusState"]   = { 0x18F1C2 },
     },
 }
 
@@ -82,7 +94,11 @@ for region, offsets in pairs(REGIONS) do
     group = LIST.createMemoryRecord()
     group.setDescription(region)
 
-    for offset, data in pairs(offsets) do
-        add_to_group(emu_base, offset, data, group)
+    local offset_keys = {}
+    for key in pairs(offsets) do table.insert(offset_keys, key) end
+    table.sort(offset_keys)
+
+    for _, offset in ipairs(offset_keys) do
+        add_to_group(emu_base, offset, offsets[offset], group)
     end
 end

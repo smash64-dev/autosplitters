@@ -5,8 +5,8 @@ state("Project64KSE") {
 }
 
 state("Project64KVE") {
-    uint crc1 : "Project64KSE.exe", 0x90E50;
-    uint crc2 : "Project64KSE.exe", 0x90E54;
+    uint crc1 : "Project64KVE.exe", 0x90E50;
+    uint crc2 : "Project64KVE.exe", 0x90E54;
     int emuBase : "Project64KVE.exe", 0x9262C;
 }
 
@@ -32,7 +32,10 @@ startup {
             { "stage",          0xA5224 },  // + 0x12
             { "score",          0xA5230 },  // + 0x1E
             { "matchState",     0xA526A },  // + 0x58
+            { "targets",        0x131C0F },
+            { "platforms",      0x131C13 },
             { "isLoading",      0x1397BC },
+            { "bonusState",     0x18FCB2 },
 
             // constants
             { "finalBoss",      0x0C },     // master hand id
@@ -43,6 +46,9 @@ startup {
             // scenes
             { "gameMenu1p",     0x09 },
             { "charSelect",     0x12 },
+            { "bonus1Select",   0x14 },     // break the targets
+            { "bonus2Select",   0x15 },     // board the platforms
+            { "bonusStage",     0x36 },
         } },
         // Europe
         { "93945F48-5C0F2E30", new Dictionary<string, int>() {
@@ -52,7 +58,10 @@ startup {
             { "stage",          0xAD344 },  // + 0x12
             { "score",          0xAD350 },  // + 0x1E
             { "matchState",     0xAD38A },  // + 0x58
+            { "targets",        0x13A0EF },
+            { "platforms",      0x13A0F3 },
             { "isLoading",      0x141C9C },
+            { "bonusState",     0x197F22 },
 
             // constants
             { "finalBoss",      0x0C },     // master hand id
@@ -63,6 +72,9 @@ startup {
             // scenes
             { "gameMenu1p",     0x09 },
             { "charSelect",     0x12 },
+            { "bonus1Select",   0x14 },     // break the targets
+            { "bonus2Select",   0x15 },     // board the platforms
+            { "bonusStage",     0x36 },
         } },
         // Japan
         { "67D20729-F696774C", new Dictionary<string, int>() {
@@ -72,7 +84,10 @@ startup {
             { "stage",          0xA2AA4 },  // + 0x12
             { "score",          0xA2AB0 },  // + 0x1E
             { "matchState",     0xA2AEA },  // + 0x58
+            { "targets",        0x12EF8F },
+            { "platforms",      0x12EF93 },
             { "isLoading",      0x136B9C },
+            { "bonusState",     0x18CA82 },
 
             // constants
             { "finalBoss",      0x0C },     // master hand id
@@ -83,6 +98,9 @@ startup {
             // scenes
             { "gameMenu1p",     0x08 },
             { "charSelect",     0x11 },
+            { "bonus1Select",   0x13 },     // break the targets
+            { "bonus2Select",   0x14 },     // board the platforms
+            { "bonusStage",     0x34 },
         } },
         // North America
         { "916B8B5B-780B85A4", new Dictionary<string, int>() {
@@ -92,7 +110,10 @@ startup {
             { "stage",          0xA4AE4 },  // + 0x12
             { "score",          0xA4AF0 },  // + 0x1E
             { "matchState",     0xA4B2A },  // + 0x58
+            { "targets",        0x1313FF },
+            { "platforms",      0x131403 },
             { "isLoading",      0x138F9C },
+            { "bonusState",     0x18F1C2 },
 
             // constants
             { "finalBoss",      0x0C },     // master hand id
@@ -103,6 +124,9 @@ startup {
             // scenes
             { "gameMenu1p",     0x08 },
             { "charSelect",     0x11 },
+            { "bonus1Select",   0x13 },     // break the targets
+            { "bonus2Select",   0x14 },     // board the platforms
+            { "bonusStage",     0x35 },
         } },
     };
 }
@@ -133,6 +157,9 @@ init {
             var constants = vars.regionData[crcStr];
 
             dynamic obj = new ExpandoObject();
+            obj.bonusStage = constants["bonusStage"];
+            obj.bonus1Select = constants["bonus1Select"];
+            obj.bonus2Select = constants["bonus2Select"];
             obj.charSelect = constants["charSelect"];
             obj.finalBoss = constants["finalBoss"];
             obj.finalStage = constants["finalStage"];
@@ -161,6 +188,11 @@ init {
                 new MemoryWatcher<byte>(new IntPtr(vars.GetEmuOffset(offsets["matchState"]))) { Name = "matchState" },
                 new MemoryWatcher<byte>(new IntPtr(vars.GetEmuOffset(offsets["stage"]))) { Name = "stage" },
                 new MemoryWatcher<int>(new IntPtr(vars.GetEmuOffset(offsets["score"]))) { Name = "score" },
+
+                // bonus mode addresses
+                new MemoryWatcher<byte>(new IntPtr(vars.GetEmuOffset(offsets["targets"]))) { Name = "targets" },
+                new MemoryWatcher<byte>(new IntPtr(vars.GetEmuOffset(offsets["platforms"]))) { Name = "platforms" },
+                new MemoryWatcher<byte>(new IntPtr(vars.GetEmuOffset(offsets["bonusState"]))) { Name = "bonusState" },
             };
         } else {
             return new MemoryWatcherList();
@@ -168,6 +200,7 @@ init {
     });
 
     vars.bossReady = false;
+    vars.classicMode = false;
     vars.debug = true;
     vars.ready = false;
     vars.romConst = new ExpandoObject();
@@ -178,7 +211,13 @@ start {
     vars.bossReady = false;
 
     if (vars.romState["currentScene"].Current == vars.romConst.charSelect && vars.romState["isLoading"].Current == 1) {
-        if (vars.debug) print("smash_brothers: starting");
+        if (vars.debug) print("smash_brothers 1p mode: starting");
+        vars.classicMode = true;
+        return true;
+    }
+
+    if (!vars.classicMode && vars.romState["currentScene"].Current == vars.romConst.bonusStage && vars.romState["bonusState"].Current == 1) {
+        if (vars.debug) print("smash_brothers bonus mode: starting");
         return true;
     }
 }
@@ -186,21 +225,48 @@ start {
 reset {
     if (vars.romState["currentScene"].Current == vars.romConst.gameMenu1p) {
         if (vars.debug) print("smash_brothers: resetting");
+
         vars.bossReady = false;
+        vars.classicMode = false;
         return true;
     }
+
+    if (!vars.classicMode) {
+        if (vars.romState["currentScene"].Current == vars.romConst.bonusStage && vars.romState["bonusState"].Current == 0) {
+            if (vars.debug) print("smash_brothers bonus mode: resetting");
+            return true;
+        }
+
+        if (vars.romState["currentScene"].Current == vars.romConst.bonus1Select || vars.romState["currentScene"].Current == vars.romConst.bonus2Select) {
+            if (vars.debug) print("smash_brothers bonus mode: resetting");
+            return true;
+        }
+    }
+
 }
 
 split {
-    if (vars.romState["stage"].Current > vars.romState["stage"].Old) {
-        if (vars.debug) print("smash_brothers: splitting (stage change)");
-        return true;
-    }
+    if (vars.classicMode) {
+        if (vars.romState["stage"].Current > vars.romState["stage"].Old) {
+            if (vars.debug) print("smash_brothers 1p mode: splitting (stage change)");
+            return true;
+        }
 
-    // handle boss last hit
-    if (vars.bossReady) {
-        if (vars.romState["stage"].Current == vars.romConst.finalStage && vars.romState["matchState"].Current == vars.romConst.gameSet) {
-            if (vars.debug) print("smash_brothers: splitting (last hit)");
+        // handle boss last hit
+        if (vars.bossReady) {
+            if (vars.romState["stage"].Current == vars.romConst.finalStage && vars.romState["matchState"].Current == vars.romConst.gameSet) {
+                if (vars.debug) print("smash_brothers 1p mode: splitting (last hit)");
+                return true;
+            }
+        }
+    } else {
+        if (vars.romState["targets"].Current < vars.romState["targets"].Old) {
+            if (vars.debug) print("smash_brothers bonus mode: splitting (targets)");
+            return true;
+        }
+
+        if (vars.romState["platforms"].Current < vars.romState["platforms"].Old) {
+            if (vars.debug) print("smash_brothers bonus mode: splitting (platforms)");
             return true;
         }
     }
@@ -224,9 +290,10 @@ update {
     }
 
     vars.romState.UpdateAll(game);
-    if (vars.romState["stage"].Current == vars.romConst.finalStage) {
+
+    if (vars.classicMode && vars.romState["stage"].Current == vars.romConst.finalStage) {
         if (!vars.bossReady && vars.romState["matchState"].Current == vars.romConst.gameStart) {
-            if (vars.debug) print("smash_brothers: final boss is ready");
+            if (vars.debug) print("smash_brothers 1p mode: final boss is ready");
             vars.bossReady = true;
         }
     }
