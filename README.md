@@ -15,7 +15,7 @@ Auto Splitters for Smash 64 speedrunners
 - `Edit Splits` in Livesplit and set the game name
 - `Activate` the autosplitter
 - If you're using a ROM hack/new Remix version, use `Settings` to force the correct version
-- Start a [supported emulator](README.md#emulators)
+- Start a [supported emulator](#supported-emulators)
 
 ![LiveSplit example](res/livesplit-example.png)
 
@@ -32,7 +32,7 @@ Auto Splitters for Smash 64 speedrunners
 
 # Usage
 
-## [Supported Emulators](#emulators)
+## Supported Emulators
 
 - [Project64KSE](https://smash64.online)
 - Project64KVE (replaced by Project64SE, but still supported)
