@@ -11,99 +11,12 @@ state("Project64KVE") {
 }
 
 startup {
-    settings.Add("forceAusRom", false, "Force Australia ROM");
-    settings.SetToolTip("forceAusRom", "Check this if you're using a ROM hack based on the Australia ROM");
-
-    settings.Add("forceEuRom", false, "Force Europe ROM");
-    settings.SetToolTip("forceEuRom", "Check this if you're using a ROM hack based on the Europe ROM");
-
-    settings.Add("forceJpRom", false, "Force Japan ROM");
-    settings.SetToolTip("forceJpRom", "Check this if you're using a ROM hack based on the Japan ROM");
-
-    settings.Add("forceNaRom", false, "Force North America ROM");
-    settings.SetToolTip("forceNaRom", "Check this if you're using a ROM hack based on the North America ROM");
+    settings.Add("forceDetectRom", false, "Force Smash Remix ROM");
+    settings.SetToolTip("forceDetectRom", "Check this if you're using a ROM hack based on the Smash Remix ROM");
 
     vars.regionData = new Dictionary<string, Dictionary<string, int>>() {
-        // Australia
-        { "DD26FDA1-CB4A6BE3", new Dictionary<string, int>() {
-            // offsets
-            { "lastScene",      0xA5212 },
-            { "currentScene",   0xA5213 },  // + 0x01
-            { "stage",          0xA5224 },  // + 0x12
-            { "score",          0xA5230 },  // + 0x1E
-            { "stageId",        0xA525A },  // + 0x48
-            { "matchState",     0xA526A },  // + 0x58
-            { "targets",        0x131C0F },
-            { "platforms",      0x131C13 },
-            { "isLoading",      0x1397BC },
-            { "bonusState",     0x18FCB2 },
-
-            // constants
-            { "finalStage",     0x0D },     // round count
-            { "gameSet",        0x06 },
-            { "gameStart",      0x01 },
-
-            // scenes
-            { "gameMenu1p",     0x09 },
-            { "charSelect",     0x12 },
-            { "bonus1Select",   0x14 },     // break the targets
-            { "bonus2Select",   0x15 },     // board the platforms
-            { "bonusStage",     0x36 },
-        } },
-        // Europe
-        { "93945F48-5C0F2E30", new Dictionary<string, int>() {
-            // offsets
-            { "lastScene",      0xAD332 },
-            { "currentScene",   0xAD333 },  // + 0x01
-            { "stage",          0xAD344 },  // + 0x12
-            { "score",          0xAD350 },  // + 0x1E
-            { "stageId",        0xAD37A },  // + 0x48
-            { "matchState",     0xAD38A },  // + 0x58
-            { "targets",        0x13A0EF },
-            { "platforms",      0x13A0F3 },
-            { "isLoading",      0x141C9C },
-            { "bonusState",     0x197F22 },
-
-            // constants
-            { "finalStage",     0x0D },     // round count
-            { "gameSet",        0x06 },
-            { "gameStart",      0x01 },
-
-            // scenes
-            { "gameMenu1p",     0x09 },
-            { "charSelect",     0x12 },
-            { "bonus1Select",   0x14 },     // break the targets
-            { "bonus2Select",   0x15 },     // board the platforms
-            { "bonusStage",     0x36 },
-        } },
-        // Japan
-        { "67D20729-F696774C", new Dictionary<string, int>() {
-            // offsets
-            { "lastScene",      0xA2A92 },
-            { "currentScene",   0xA2A93 },  // + 0x01
-            { "stage",          0xA2AA4 },  // + 0x12
-            { "score",          0xA2AB0 },  // + 0x1E
-            { "stageId",        0xA2ADA },  // + 0x48
-            { "matchState",     0xA2AEA },  // + 0x58
-            { "targets",        0x12EF8F },
-            { "platforms",      0x12EF93 },
-            { "isLoading",      0x136B9C },
-            { "bonusState",     0x18CA82 },
-
-            // constants
-            { "finalStage",     0x0D },     // round count
-            { "gameSet",        0x06 },
-            { "gameStart",      0x01 },
-
-            // scenes
-            { "gameMenu1p",     0x08 },
-            { "charSelect",     0x11 },
-            { "bonus1Select",   0x13 },     // break the targets
-            { "bonus2Select",   0x14 },     // board the platforms
-            { "bonusStage",     0x34 },
-        } },
-        // North America
-        { "916B8B5B-780B85A4", new Dictionary<string, int>() {
+        // 0.9.7
+        { "9D2B9C7F-6D90A8EF", new Dictionary<string, int>() {
             // offsets
             { "lastScene",      0xA4AD2 },
             { "currentScene",   0xA4AD3 },  // + 0x01
@@ -120,6 +33,7 @@ startup {
             { "finalStage",     0x0D },     // round count
             { "gameSet",        0x06 },
             { "gameStart",      0x01 },
+            { "stageRest",      0x8B },
 
             // scenes
             { "gameMenu1p",     0x08 },
@@ -129,11 +43,21 @@ startup {
             { "bonusStage",     0x35 },
         } },
     };
+
+    // older versions (some things may not work)
+    vars.regionData["B9CDC5C3-0D2F4668"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.5b
+    vars.regionData["B9B5831B-7F3DEBAF"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.5
+    vars.regionData["1B5AAD82-368B88C1"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.4
+    vars.regionData["40D195A0-8CA46F23"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.3c
+    vars.regionData["00B61AB1-8B79A53C"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.3b
+    vars.regionData["F1BB0C7C-77EA1DE8"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.3
+    vars.regionData["FA3AA571-673C45D2"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.2
+    vars.regionData["DEB992B2-55FC9187"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9
 }
 
 init {
     vars.Debug = (Action<string>)((message) => {
-        if (vars.debug) print("smash_brothers: " + message);
+        if (vars.debug) print("smash_remix: " + message);
     });
 
     vars.GetEmuOffset = (Func<int, int>)((offset) => {
@@ -148,10 +72,8 @@ init {
     vars.GetRegionName = (Func<uint, uint, string>)((crc1, crc2) => {
         var crcStr = crc1.ToString("X") + "-" + crc2.ToString("X");
 
-        crcStr = settings["forceAusRom"] ? "DD26FDA1-CB4A6BE3" : crcStr;
-        crcStr = settings["forceEuRom"] ? "93945F48-5C0F2E30" : crcStr;
-        crcStr = settings["forceJpRom"] ? "67D20729-F696774C" : crcStr;
-        crcStr = settings["forceNaRom"] ? "916B8B5B-780B85A4" : crcStr;
+        // force to the latest publicly available version
+        crcStr = settings["forceDetectRom"] ? "9D2B9C7F-6D90A8EF" : crcStr;
         return crcStr;
     });
 
