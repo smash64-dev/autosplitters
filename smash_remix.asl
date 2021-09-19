@@ -15,8 +15,8 @@ startup {
     settings.SetToolTip("forceDetectRom", "Check this if you're using a ROM hack based on the Smash Remix ROM");
 
     vars.regionData = new Dictionary<string, Dictionary<string, int>>() {
-        // 0.9.7
-        { "9D2B9C7F-6D90A8EF", new Dictionary<string, int>() {
+        // 1.0.0
+        { "FD0E716E-FB029C8E", new Dictionary<string, int>() {
             // offsets
             { "lastScene",      0xA4AD2 },
             { "currentScene",   0xA4AD3 },  // + 0x01
@@ -45,14 +45,15 @@ startup {
     };
 
     // older versions (some things may not work)
-    vars.regionData["B9CDC5C3-0D2F4668"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.5b
-    vars.regionData["B9B5831B-7F3DEBAF"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.5
-    vars.regionData["1B5AAD82-368B88C1"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.4
-    vars.regionData["40D195A0-8CA46F23"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.3c
-    vars.regionData["00B61AB1-8B79A53C"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.3b
-    vars.regionData["F1BB0C7C-77EA1DE8"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.3
-    vars.regionData["FA3AA571-673C45D2"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9.2
-    vars.regionData["DEB992B2-55FC9187"] = vars.regionData["9D2B9C7F-6D90A8EF"];    // 0.9
+    vars.regionData["9D2B9C7F-6D90A8EF"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.7
+    vars.regionData["B9CDC5C3-0D2F4668"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.5b
+    vars.regionData["B9B5831B-7F3DEBAF"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.5
+    vars.regionData["1B5AAD82-368B88C1"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.4
+    vars.regionData["40D195A0-8CA46F23"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.3c
+    vars.regionData["00B61AB1-8B79A53C"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.3b
+    vars.regionData["F1BB0C7C-77EA1DE8"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.3
+    vars.regionData["FA3AA571-673C45D2"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.2
+    vars.regionData["DEB992B2-55FC9187"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9
 }
 
 init {
@@ -73,7 +74,7 @@ init {
         var crcStr = crc1.ToString("X") + "-" + crc2.ToString("X");
 
         // force to the latest publicly available version
-        crcStr = settings["forceDetectRom"] ? "9D2B9C7F-6D90A8EF" : crcStr;
+        crcStr = settings["forceDetectRom"] ? "FD0E716E-FB029C8E" : crcStr;
         return crcStr;
     });
 
