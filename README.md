@@ -40,22 +40,28 @@ Auto Splitters for Smash 64 speedrunners
 
 ## Limitations
 
-|                              | LiveSplit          | AutoSplit          |
-| ---------------------------- | ------------------ | ------------------ |
-| Console                      | :x:                | :heavy_check_mark: |
-| Emulator                     | :heavy_check_mark: | :heavy_check_mark: |
-| Vanilla ROMs (Na/Jp/Eu/As)   | :heavy_check_mark: | :heavy_check_mark: |
-| Smash Remix  (0.9 to latest) | :heavy_check_mark: | :heavy_check_mark: |
-| 1P Game Mode - Split         | :heavy_check_mark: | :heavy_check_mark: |
-| 1P Game Mode - Last Hit      | :heavy_check_mark: | :heavy_check_mark: |
-| 1P Game Mode - Start         | :heavy_check_mark: | :x:                |
-| 1P Game Mode - Reset         | :heavy_check_mark: | :x:                |
-| Bonus 1 Practice (Targets)   | :heavy_check_mark: | :x:*               |
-| Bonus 1 Practice (Platforms) | :heavy_check_mark: | :x:*               |
-| Remix 1P Mode - Split        | :heavy_check_mark: | :heavy_check_mark: |
-| Remix 1P Mode - Last Hit     | :heavy_check_mark: | :heavy_check_mark: |
-| Remix 1P Mode - Start        | :heavy_check_mark: | :x:                |
-| Remix 1P Mode - Reset        | :heavy_check_mark: | :x:                |
+|                                | LiveSplit          | AutoSplit          |
+| ------------------------------ | ------------------ | ------------------ |
+| Console                        | :x:                | :heavy_check_mark: |
+| Emulator                       | :heavy_check_mark: | :heavy_check_mark: |
+| Vanilla ROMs (Na/Jp/Eu/As)     | :heavy_check_mark: | :heavy_check_mark: |
+| Smash Remix  (0.9 to latest)   | :heavy_check_mark: | :heavy_check_mark: |
+| 1P Game Mode - Split           | :heavy_check_mark: | :heavy_check_mark: |
+| 1P Game Mode - Last Hit        | :heavy_check_mark: | :heavy_check_mark: |
+| 1P Game Mode - Start           | :heavy_check_mark: | :x:                |
+| 1P Game Mode - Reset           | :heavy_check_mark: | :x:                |
+| Bonus 1 Practice (Targets)     | :heavy_check_mark: | :x:*               |
+| Bonus 1 Practice (Platforms)   | :heavy_check_mark: | :x:*               |
+| Remix 1P Mode - Split          | :heavy_check_mark: | :heavy_check_mark: |
+| Remix 1P Mode - Last Hit       | :heavy_check_mark: | :heavy_check_mark: |
+| Remix 1P Mode - Start          | :heavy_check_mark: | :x:                |
+| Remix 1P Mode - Reset          | :heavy_check_mark: | :x:                |
+| Remix All-Star Mode - Split    | :heavy_check_mark: | :x:                |
+| Remix All-Star Mode - Last Hit | :heavy_check_mark: | :x:                |
+| Remix All-Star Mode - Start    | :heavy_check_mark: | :x:                |
+| Remix All-Star Mode - Reset    | :heavy_check_mark: | :x:                |
+
+
 
 \* *Using AutoSplit to track individual targets/platforms may be possible, but it's finnicky*
 
