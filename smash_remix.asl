@@ -14,9 +14,24 @@ startup {
     settings.Add("forceDetectRom", false, "Force Smash Remix ROM");
     settings.SetToolTip("forceDetectRom", "Check this if you're using a ROM hack based on the Smash Remix ROM");
 
-    vars.regionData = new Dictionary<string, Dictionary<string, int>>() {
-        // 1.0.0
-        { "FD0E716E-FB029C8E", new Dictionary<string, int>() {
+    settings.Add("allStarSplitAll", false, "All-Star Split Every Match");
+    settings.SetToolTip("allStarSplitAll", "Check this if you want to split every match, instead when the match type changes");
+
+    vars.versions = new Dictionary<int, Tuple<string, string>>() {
+        { 10, Tuple.Create("1.0.0",  "FD0E716E-FB029C8E") },
+        { 09, Tuple.Create("0.9.7",  "9D2B9C7F-6D90A8EF") },
+        { 08, Tuple.Create("0.9.5b", "B9CDC5C3-0D2F4668") },
+        { 07, Tuple.Create("0.9.5",  "B9B5831B-7F3DEBAF") },
+        { 06, Tuple.Create("0.9.4",  "1B5AAD82-368B88C1") },
+        { 05, Tuple.Create("0.9.3c", "40D195A0-8CA46F23") },
+        { 04, Tuple.Create("0.9.3b", "00B61AB1-8B79A53C") },
+        { 03, Tuple.Create("0.9.3",  "F1BB0C7C-77EA1DE8") },
+        { 02, Tuple.Create("0.9.2",  "FA3AA571-673C45D2") },
+        { 01, Tuple.Create("0.9",    "DEB992B2-55FC9187") },
+    };
+
+    vars.versionData = new Dictionary<string, Dictionary<string, int>>() {
+        { "default-data", new Dictionary<string, int>() {
             // offsets
             { "lastScene",      0xA4AD2 },
             { "currentScene",   0xA4AD3 },  // + 0x01
@@ -30,10 +45,20 @@ startup {
             { "bonusState",     0x18F1C2 },
 
             // constants
+            { "asmSingles",     0x02 },
+            { "asmDoubles",     0x04 },
+            { "asmTriples",     0x05 },
+            { "asmFinal",       0x01 },
             { "finalStage",     0x0D },     // round count
             { "gameSet",        0x06 },
             { "gameStart",      0x01 },
             { "stageRest",      0x8B },
+
+            // features
+            { "hasAllStar",     0x01 },
+            { "hasCruelMan",    0x01 },
+            { "hasMultiMan",    0x01 },
+            { "hasRemix1P",     0x01 },
 
             // scenes
             { "gameMenu1p",     0x08 },
@@ -43,22 +68,19 @@ startup {
             { "bonusStage",     0x35 },
         } },
     };
-
-    // older versions (some things may not work)
-    vars.regionData["9D2B9C7F-6D90A8EF"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.7
-    vars.regionData["B9CDC5C3-0D2F4668"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.5b
-    vars.regionData["B9B5831B-7F3DEBAF"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.5
-    vars.regionData["1B5AAD82-368B88C1"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.4
-    vars.regionData["40D195A0-8CA46F23"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.3c
-    vars.regionData["00B61AB1-8B79A53C"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.3b
-    vars.regionData["F1BB0C7C-77EA1DE8"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.3
-    vars.regionData["FA3AA571-673C45D2"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9.2
-    vars.regionData["DEB992B2-55FC9187"] = vars.regionData["FD0E716E-FB029C8E"];    // 0.9
 }
 
 init {
     vars.Debug = (Action<string>)((message) => {
         if (vars.debug) print("smash_remix: " + message);
+    });
+
+    vars.DeepCopy = (Func<Dictionary<string, int>, Dictionary<string, int>>)((dictToCopy) => {
+        var newDict = new Dictionary<string, int>();
+        foreach(var obj in dictToCopy) {
+            newDict.Add(obj.Key, obj.Value);
+        }
+        return newDict;
     });
 
     vars.GetEmuOffset = (Func<int, int>)((offset) => {
@@ -74,24 +96,39 @@ init {
         var crcStr = crc1.ToString("X") + "-" + crc2.ToString("X");
 
         // force to the latest publicly available version
-        crcStr = settings["forceDetectRom"] ? "FD0E716E-FB029C8E" : crcStr;
+        crcStr = settings["forceDetectRom"] ? "default-data" : crcStr;
         return crcStr;
     });
 
     vars.GetRomConstants = (Func<uint, uint, ExpandoObject>)((crc1, crc2) => {
         var crcStr = vars.GetRegionName(crc1, crc2);
-        if (vars.regionData.ContainsKey(crcStr)) {
-            var constants = vars.regionData[crcStr];
+        if (vars.versionData.ContainsKey(crcStr)) {
+            var constants = vars.versionData[crcStr];
 
             dynamic obj = new ExpandoObject();
-            obj.bonusStage = constants["bonusStage"];
-            obj.bonus1Select = constants["bonus1Select"];
-            obj.bonus2Select = constants["bonus2Select"];
-            obj.charSelect = constants["charSelect"];
+            // constants
+            obj.asmSingles = constants["asmSingles"];
+            obj.asmDoubles = constants["asmDoubles"];
+            obj.asmTriples = constants["asmTriples"];
+            obj.asmFinal = constants["asmFinal"];
             obj.finalStage = constants["finalStage"];
-            obj.gameMenu1p = constants["gameMenu1p"];
             obj.gameSet = constants["gameSet"];
             obj.gameStart = constants["gameStart"];
+            obj.stageRest = constants["stageRest"];
+
+            // features
+            obj.hasAllStar = constants["hasAllStar"];
+            obj.hasCruelMan = constants["hasCruelMan"];
+            obj.hasMultiMan = constants["hasMultiMan"];
+            obj.hasRemix1P = constants["hasRemix1P"];
+
+            // scenes
+            obj.gameMenu1p = constants["gameMenu1p"];
+            obj.charSelect = constants["charSelect"];
+            obj.bonus1Select = constants["bonus1Select"];
+            obj.bonus2Select = constants["bonus2Select"];
+            obj.bonusStage = constants["bonusStage"];
+
             return obj;
         } else {
             return new ExpandoObject();
@@ -100,8 +137,8 @@ init {
 
     vars.GetRomState = (Func<uint, uint, MemoryWatcherList>)((crc1, crc2) => {
         var crcStr = vars.GetRegionName(crc1, crc2);
-        if (vars.regionData.ContainsKey(crcStr)) {
-            var offsets = vars.regionData[crcStr];
+        if (vars.versionData.ContainsKey(crcStr)) {
+            var offsets = vars.versionData[crcStr];
 
             return new MemoryWatcherList() {
                 // menu addresses
@@ -126,6 +163,27 @@ init {
         }
     });
 
+    // version specific features
+    foreach (var version in vars.versions) {
+        vars.versionData[version.Value.Item2] = vars.DeepCopy(vars.versionData["default-data"]);
+
+        if (version.Key < 10) {
+            vars.versionData[version.Value.Item2]["hasAllStar"] = 0x00;
+        }
+
+        if (version.Key < 9) {
+            vars.versionData[version.Value.Item2]["hasRemix1P"] = 0x00;
+        }
+
+        if (version.Key < 6) {
+            vars.versionData[version.Value.Item2]["hasCruelMan"] = 0x00;
+            vars.versionData[version.Value.Item2]["hasMultiMan"] = 0x00;
+        }
+    }
+
+    vars.allStarMode = false;
+    vars.allStarProgress = 0;
+    vars.allStarSplits = new List<int>();
     vars.bossReady = false;
     vars.classicMode = false;
     vars.debug = true;
@@ -152,6 +210,9 @@ start {
 reset {
     if (vars.romState["currentScene"].Current == vars.romConst.gameMenu1p) {
         vars.Debug("resetting");
+        vars.allStarMode = false;
+        vars.allStarProgress = 0;
+        vars.allStarSplits = new List<int>();
         vars.bossReady = false;
         vars.classicMode = false;
         return true;
@@ -168,7 +229,6 @@ reset {
             return true;
         }
     }
-
 }
 
 split {
@@ -182,6 +242,34 @@ split {
         if (vars.bossReady) {
             if (vars.romState["stage"].Current == vars.romConst.finalStage && vars.romState["matchState"].Current == vars.romConst.gameSet) {
                 vars.Debug("splitting 1P game (last hit on boss)");
+                return true;
+            }
+        }
+    } else if (vars.allStarMode) {
+        // moving from the rest stage into a new battle
+        if (vars.romState["stageId"].Current == vars.romConst.stageRest && vars.romState["stage"].Current != vars.romState["stage"].Old) {
+            if (vars.allStarProgress+1 <= vars.allStarSplits.Count && vars.romState["stage"].Current == vars.allStarSplits[vars.allStarProgress+1]) {
+                vars.allStarProgress++;
+
+                if (! settings["allStarSplitAll"]) {
+                    vars.Debug("splitting all-star (new match style)");
+                    return true;
+                } else {
+                    vars.Debug("not splitting, all-star (new match style)");
+                }
+            }
+
+            // split every match change if set
+            if (settings["allStarSplitAll"]) {
+                vars.Debug("splitting all-star (new match)");
+                return true;
+            }
+        }
+
+        // handle last hit, progress
+        if (vars.romState["stageId"].Current != vars.romConst.stageRest && vars.allStarProgress+1 == vars.allStarSplits.Count) {
+            if (vars.romState["matchState"].Current == vars.romConst.gameSet) {
+                vars.Debug("splitting all-star (last hit of match)");
                 return true;
             }
         }
@@ -205,6 +293,9 @@ update {
         vars.romState = vars.GetRomState(current.crc1, current.crc2);
 
         vars.Debug("CRC detected (" + vars.GetRegionName(current.crc1, current.crc2) + ") is " + (vars.romState.Count == 0 ? "invalid" : "valid"));
+        if (vars.romState.Count != 0) {
+            vars.Debug("features available: (all-star: " + vars.romConst.hasAllStar + ", remix-1p: " + vars.romConst.hasRemix1P + ")");
+        }
         vars.ready = true;
     }
 
@@ -213,10 +304,22 @@ update {
     }
 
     vars.romState.UpdateAll(game);
-    if (vars.classicMode && vars.romState["stage"].Current == vars.romConst.finalStage) {
-        if (!vars.bossReady && vars.romState["matchState"].Current == vars.romConst.gameStart) {
-            vars.Debug("marking 1P game final boss ready");
-            vars.bossReady = true;
+    if (vars.classicMode) {
+        // handle all star mode
+        if (vars.romConst.hasAllStar == 1 && !vars.allStarMode && vars.romState["stageId"].Current == vars.romConst.stageRest) {
+            vars.Debug("marking 1P game as all-star mode");
+            vars.allStarMode = true;
+            vars.allStarProgress = 0;
+            vars.allStarSplits = new List<int>() { vars.romConst.asmSingles, vars.romConst.asmDoubles, vars.romConst.asmTriples, vars.romConst.asmFinal };
+            vars.classicMode = false;
+        }
+
+        // handle final stage
+        if (vars.romState["stage"].Current == vars.romConst.finalStage) {
+            if (!vars.bossReady && vars.romState["matchState"].Current == vars.romConst.gameStart) {
+                vars.Debug("marking 1P game final boss ready");
+                vars.bossReady = true;
+            }
         }
     }
 }
